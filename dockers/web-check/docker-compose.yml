@@ -1,5 +1,0 @@
-services:
-    web-check:
-        image: lissy93/web-check
-        ports:
-            - '6000:3000'

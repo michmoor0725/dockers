@@ -1,49 +1,5 @@
-# ── Docker project ignores ──────────────────────────────
-# Runtime bind-mounts
-**/data/
-**/db/
-**/logs/
-**/cache/
-**/temp/
-**/uploads/
-**/screenshots/
-**/docker-tls/
-**/letsencrypt/
-
-# SQLite DB + journal files
-*.db
-*.db-wal
-*.db-shm
-
-# Secrets & env
-.env
-*.secret
-*.vault
-*.bak
-
-# Keep a clean template env
+*
+!*.yml
+!*.yaml
 !.env.example
-
-# ── Git hygiene ─────────────────────────────────────────
-# Prevent embedding repos like snmp_exporter
-**/.git/
-
-# ── OS / editor noise ───────────────────────────────────
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.idea/
-.vscode/
-*.code-workspace
-
-# ── Docker artifacts ────────────────────────────────────
-*.pid
-*.sock
-*.tar
-*.tar.gz
-
-# ── Node / Python / etc (common in monitoring stacks) ───
-node_modules/
-__pycache__/
-*.pyc
+!.gitignore
