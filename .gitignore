@@ -11,3 +11,4 @@
 # Keep safe extras
 !.gitignore
 !.env.example
+!.md
