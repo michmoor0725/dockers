@@ -1,5 +1,10 @@
+# Ignore everything
 *
+
+# Keep YAML
 !*.yml
 !*.yaml
+
+# Keep example env + ignore file
 !.env.example
 !.gitignore
