@@ -1,0 +1,10 @@
+{
+ 	"sqlite": {
+ 		"host": "/var/lib/semaphore/database.sqlite"
+ 	},
+ 	"dialect": "sqlite",
+ 	"tmp_path": "/tmp/semaphore",
+ 	"cookie_hash": "vunlYWnl2IadlU2rpurvyATARgEqmDtOiL5nm26Xj0U=",
+ 	"cookie_encryption": "r+eYoB0AhFmjAsP4p11cD42gYBXBV0eyCBW5hkeXm3w=",
+ 	"access_key_encryption": "mQjdOfrqaisbaxjXkE72i8HH8W0v7EXV0tVry8DKJgM="
+ }
