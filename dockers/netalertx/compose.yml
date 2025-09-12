@@ -13,3 +13,9 @@ services:
     environment:
       - TZ=America/New_York      
       - PORT=20211
+
+    logging:
+       driver: syslog
+       options:
+          syslog-address: "udp://192.168.50.198:1555"
+          tag: "netalertx/{{.Name}}/{{.ID}}"
