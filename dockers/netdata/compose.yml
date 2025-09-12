@@ -23,6 +23,11 @@ services:
       - /etc/os-release:/host/etc/os-release:ro
       - /var/log:/host/var/log:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://192.168.50.198:1555"
+        tag: "netdata/{{.Name}}/{{.ID}}"
 
 volumes:
   netdatalib:

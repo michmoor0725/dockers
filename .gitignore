@@ -1,14 +1,11 @@
 # Ignore everything
 *
-
 # Allow directory traversal
 !*/
-
 # Keep YAML files anywhere
 !*.yml
 !*.yaml
-
 # Keep safe extras
 !.gitignore
 !.env.example
-!.md
+!*.md
