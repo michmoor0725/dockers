@@ -15,7 +15,11 @@ services:
       - PORT=20211
 
     logging:
-       driver: syslog
-       options:
-          syslog-address: "udp://192.168.50.198:1555"
-          tag: "netalertx/{{.Name}}/{{.ID}}"
+      driver: loki
+      options:
+        loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+        loki-retries: 2
+        loki-max-backoff: 800ms
+        loki-timeout: 1s
+        keep-file: "true"
+        mode: "non-blocking"      

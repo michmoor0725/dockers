@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     image: 'jc21/nginx-proxy-manager:latest'
@@ -20,7 +19,15 @@ services:
 
       # Uncomment this if IPv6 is not enabled on your host
       # DISABLE_IPV6: 'true'
-
+    logging:
+      driver: loki
+      options:
+        loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+        loki-retries: 2
+        loki-max-backoff: 800ms
+        loki-timeout: 1s
+        keep-file: "true"
+        mode: "non-blocking"
     volumes:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
