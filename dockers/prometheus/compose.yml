@@ -3,8 +3,7 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
-    ports:
-      - "9090:9090"
+    ports: ["9090:9090"]
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -14,10 +13,17 @@ services:
     volumes:
       - /home/michael/projects/dockers/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - /home/michael/projects/dockers/prometheus/data/prometheus:/prometheus
+    networks: [monitoring]
+    logging:
+      driver: loki
+      options:
+       loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+       loki-retries: 2
+       loki-max-backoff: 800ms
+       loki-timeout: 1s
+       keep-file: "true"
+       mode: "non-blocking"
 
-    networks:
-      - monitoring
-      
   node_exporter:
     image: quay.io/prometheus/node-exporter:v1.9.1
     container_name: node_exporter
@@ -26,54 +32,97 @@ services:
     restart: unless-stopped
     volumes:
       - /:/host:ro,rslave
-    networks:
-      - monitoring  
+    networks: [monitoring]
+    logging:
+         driver: loki
+         options:
+            loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+            loki-retries: 2
+            loki-max-backoff: 800ms
+            loki-timeout: 1s
+            keep-file: "true"
+            mode: "non-blocking"
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.52.1
     container_name: cadvisor
-    ports:
-      - 8089:8080
+    ports: ["8089:8080"]
     volumes:
       - /:/rootfs:ro
       - /run:/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
-    devices:
-      - /dev/kmsg
+    devices: [/dev/kmsg]
     privileged: true
     restart: unless-stopped
-    networks:
-      - monitoring 
-      
+    networks: [monitoring]
+    logging:
+      driver: loki
+      options:
+       loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+       loki-retries: 2
+       loki-max-backoff: 800ms
+       loki-timeout: 1s
+       keep-file: "true"
+       mode: "non-blocking"
+
   snmp_exporter:
     image: prom/snmp-exporter:latest
     container_name: snmp_exporter
     restart: unless-stopped
     ports:
-      - 9116:9116
-      - 161:161/udp
+      - "9116:9116"
+      - "161:161/udp"
     volumes:
       - /home/michael/projects/dockers/prometheus/snmp.yml:/etc/snmp_exporter/snmp.yml:ro
-    networks:
-      - monitoring
+    networks: [monitoring]
+    logging:
+      driver: loki
+      options:
+       loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+       loki-retries: 2
+       loki-max-backoff: 800ms
+       loki-timeout: 1s
+       keep-file: "true"
+       mode: "non-blocking"
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
-    ports:
-      - "3006:3000"
+    ports: ["3006:3000"]
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=shotokan1   # set your own strong password
+      - GF_SECURITY_ADMIN_PASSWORD=shotokan1
     volumes:
       - /home/michael/projects/dockers/prometheus/grafana/data:/var/lib/grafana
+    networks: [monitoring]
+    logging:
+      driver: loki
+      options:
+       loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+       loki-retries: 2
+       loki-max-backoff: 800ms
+       loki-timeout: 1s
+       keep-file: "true"
+       mode: "non-blocking"
 
-    networks:
-      - monitoring
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: ["-config.file=/etc/loki/config.yaml"]
+    ports: ["3100:3100"]
+    volumes:
+      - /home/michael/projects/dockers/prometheus/loki_config/config.yaml:/etc/loki/config.yaml:ro
+      - data_loki:/loki:rw           # <-- named volume reference is fine here
+    restart: unless-stopped
+    networks: [monitoring]
 
 networks:
   monitoring:
     driver: bridge
+
+volumes:
+  data_loki:
+    driver: local

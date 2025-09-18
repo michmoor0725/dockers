@@ -10,7 +10,15 @@ services:
             - TZ=America/New_York
         ports:
             - '8080:80'
+
         logging:
-            options:
-                max-size: 10m
-        restart: unless-stopped
+         driver: loki
+         options:
+            loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+            loki-retries: 2
+            loki-max-backoff: 800ms
+            loki-timeout: 1s
+            keep-file: "true"
+            mode: "non-blocking"    
+            
+
