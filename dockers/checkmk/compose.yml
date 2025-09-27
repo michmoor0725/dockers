@@ -3,10 +3,10 @@ services:
     image: "checkmk/check-mk-raw:2.4.0-latest"
     container_name: "checkmk"
     environment:
-      - CMK_PASSWORD=shotokan1
-      - TZ=America/New_York
-      - CMK_SITE_ID=Atlanta
-      - CMK_LIVESTATUS_TCP=on
+      CMK_PASSWORD: ${ADMIN_PASSWORD}
+      TZ: UTC
+      CMK_SITE_ID: Atlanta
+      CMK_LIVESTATUS_TCP: on
       #- MAIL_RELAY_HOST=smtp.zoho.com
 
     volumes:
