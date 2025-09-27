@@ -6,3 +6,13 @@ services:
         container_name: it-tools
         ports:
             - '8082:80'
+            
+        logging:
+         driver: loki
+         options:
+            loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+            loki-retries: 2
+            loki-max-backoff: 800ms
+            loki-timeout: 1s
+            keep-file: "true"
+            mode: "non-blocking"    
