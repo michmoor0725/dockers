@@ -119,6 +119,40 @@ services:
     restart: unless-stopped
     networks: [monitoring]
 
+  influxdb:
+    container_name: influxdb
+    image: docker.io/library/influxdb:2.7.12-alpine
+    ports:
+      - '8086:8086'
+    volumes:
+      - type: bind
+        source: /home/michael/projects/dockers/prometheus/influxdb-data
+        target: /var/lib/influxdb2
+      - type: bind
+        source: /home/michael/projects/dockers/prometheus/influxdb2/influxdb2
+        target: /etc/influxdb2
+
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=shotokan1
+      - DOCKER_INFLUXDB_INIT_ORG=networkingtitan
+      - DOCKER_INFLUXDB_INIT_BUCKET=networktitan_bucket 
+
+
+    logging:
+      driver: loki
+      options:
+       loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+       loki-retries: 2
+       loki-max-backoff: 800ms
+       loki-timeout: 1s
+       keep-file: "true"
+       mode: "non-blocking"
+
+    restart: unless-stopped
+    networks: [monitoring]
+
 networks:
   monitoring:
     driver: bridge
