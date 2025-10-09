@@ -1,0 +1,11 @@
+
+# michael@dockers:~/projects/dockers$ mkdir testDir
+# michael@dockers:~/projects/dockers$ cd testDir/
+# michael@dockers:~/projects/dockers/testDir$ touch compose.yml
+# michael@dockers:~/projects/dockers/testDir$ git add .
+# michael@dockers:~/projects/dockers/testDir$ git status
+
+
+# The example above shows how to commit new docker compose projects in the future
+# Once you create the folder, create the compoose and push to repo.
+# All other data such as databases will not be part of the push

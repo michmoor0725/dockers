@@ -1,0 +1,281 @@
+// ============================================
+// DOCKER CONTAINER DISCOVERY AND LOG COLLECTION
+// ============================================
+
+// Discover Docker containers
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+// Collect logs from Docker containers
+loki.source.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.containers.targets
+  forward_to       = [loki.process.docker_logs.receiver]
+  refresh_interval = "5s"
+}
+
+// Process Docker container logs
+loki.process "docker_logs" {
+  forward_to = [loki.write.loki_instance.receiver]
+
+  stage.docker {}
+
+  stage.labels {
+    values = {
+      container_name = "__meta_docker_container_name",
+      image          = "__meta_docker_container_image",
+      compose_service = "__meta_docker_container_label_com_docker_compose_service",
+      compose_project = "__meta_docker_container_label_com_docker_compose_project",
+      source          = "docker",
+    }
+  }
+
+  // Parse JSON logs from specific services (adjust as you like)
+  stage.match {
+    selector = "{compose_service=~\"grafana|loki|prometheus\"}"
+    stage.json {
+      expressions = {
+        level     = "level",
+        message   = "msg",
+        timestamp = "time",
+      }
+    }
+    stage.labels {
+      values = {
+        level = "level",
+      }
+    }
+  }
+
+  // Extract log levels from plain-text logs
+  stage.regex {
+    expression = "(?i)(?P<extracted_level>(debug|info|warn|warning|error|err|fatal|panic|trace))"
+  }
+
+  stage.labels {
+    values = {
+      level = "extracted_level",
+    }
+  }
+
+  // Add static labels for all docker logs
+  stage.static_labels {
+    values = {
+      cluster     = "docker-monitoring",
+      environment = "homelab",
+    }
+  }
+}
+
+// ============================================
+// HOST SYSTEM LOG COLLECTION
+// ============================================
+
+loki.source.file "host_logs" {
+  targets = [
+    { __path__ = "/var/log/syslog",      job = "syslog",   log_type = "system" },
+    { __path__ = "/var/log/auth.log",    job = "auth",     log_type = "security" },
+    { __path__ = "/var/log/kern.log",    job = "kernel",   log_type = "system" },
+    { __path__ = "/var/log/dpkg.log",    job = "package",  log_type = "system" },
+    { __path__ = "/var/log/ufw.log",     job = "firewall", log_type = "security" },
+    { __path__ = "/var/log/fail2ban.log",job = "fail2ban", log_type = "security" },
+    { __path__ = "/var/log/nginx/*.log", job = "nginx",    log_type = "webserver" },
+    { __path__ = "/var/log/apache2/*.log", job = "apache", log_type = "webserver" },
+  ]
+  forward_to = [loki.process.host_logs.receiver]
+}
+
+loki.process "host_logs" {
+  forward_to = [loki.write.loki_instance.receiver]
+
+  // Parse syslog-like format
+  stage.regex {
+    expression = "^(?P<timestamp>\\S+\\s+\\d+\\s+\\d+:\\d+:\\d+)\\s+(?P<hostname>\\S+)\\s+(?P<service>\\S+?)(?:\\[(?P<pid>\\d+)\\])?:\\s+(?P<message>.*)"
+  }
+
+  // Extract log level words
+  stage.regex {
+    expression = "(?i)(?P<level>(debug|info|notice|warn|warning|error|err|crit|critical|alert|emerg|fail|failed))"
+    source     = "message"
+  }
+
+  stage.labels {
+    values = {
+      hostname = env("HOSTNAME"),
+      service  = "service",
+      level    = "level",
+      log_type = "log_type",
+      source   = "host",
+    }
+  }
+
+  stage.static_labels {
+    values = {
+      cluster     = "host-monitoring",
+      environment = "homelab",
+    }
+  }
+}
+
+// ============================================
+// REMOTE SERVER LOG COLLECTION (SYSLOG)
+// ============================================
+
+loki.source.syslog "remote_servers" {
+  listener {
+    address  = "0.0.0.0:1514"
+    protocol = "tcp"
+  }
+
+  forward_to = [loki.process.remote_server_logs.receiver]
+
+  // Relabel to carry the connection IP as a normal label
+  relabel {
+    source_labels = ["__syslog_connection_ip_address"]
+    target_label  = "server_ip"
+  }
+}
+
+loki.process "remote_server_logs" {
+  forward_to = [loki.write.loki_instance.receiver]
+
+  // Map IPs to hostnames (adjust to your environment)
+  stage.replace {
+    expression = "192\\.168\\.1\\.10"
+    source     = "server_ip"
+    replace    = "server1"
+    target     = "hostname"
+  }
+
+  stage.replace {
+    expression = "192\\.168\\.1\\.20"
+    source     = "server_ip"
+    replace    = "server2"
+    target     = "hostname"
+  }
+
+  // Default hostname if no match
+  stage.replace {
+    expression = "^$"
+    source     = "hostname"
+    replace    = "unknown-{{ .server_ip }}"
+    target     = "hostname"
+  }
+
+  // Parse syslog-like format
+  stage.regex {
+    expression = "^(?P<timestamp>\\S+\\s+\\d+\\s+\\d+:\\d+:\\d+)\\s+(?P<syslog_hostname>\\S+)\\s+(?P<service>\\S+?)(?:\\[(?P<pid>\\d+)\\])?:\\s+(?P<message>.*)"
+  }
+
+  stage.labels {
+    values = {
+      service   = "service",
+      source    = "remote-syslog",
+      server_ip = "server_ip",
+    }
+  }
+
+  // Extract level from message
+  stage.regex {
+    expression = "(?i)(?P<level>(debug|info|notice|warn|warning|error|err|crit|critical|alert|emerg))"
+    source     = "message"
+  }
+
+  stage.labels {
+    values = {
+      level = "level",
+    }
+  }
+
+  stage.static_labels {
+    values = {
+      cluster     = "remote-servers",
+      environment = "homelab",
+    }
+  }
+}
+
+// ============================================
+// REMOTE ALLOY AGENT RECEIVER
+// ============================================
+
+loki.source.loki "remote_agents" {
+  listener {
+    address  = "0.0.0.0:9999"
+    protocol = "http"
+  }
+  forward_to = [loki.write.loki_instance.receiver]
+}
+
+// ============================================
+// METRICS COLLECTION FROM CONTAINERS
+// ============================================
+
+prometheus.scrape "docker_containers" {
+  targets         = discovery.docker.containers.targets
+  forward_to      = [prometheus.remote_write.prometheus_instance.receiver]
+  scrape_interval = "15s"
+
+  // Keep only containers with label: prometheus.io/scrape=true
+  relabel {
+    source_labels = ["__meta_docker_container_label_prometheus_io_scrape"]
+    action        = "keep"
+    regex         = "true"
+  }
+
+  // Build __address__ as "<container_ip>:<port-from-label>"
+  relabel {
+    source_labels = ["__meta_docker_container_network_ip", "__meta_docker_container_label_prometheus_io_port"]
+    target_label  = "__address__"
+    separator     = ":"
+    replacement   = "$1:$2"
+  }
+
+  // Helpful labels
+  relabel {
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "container_name"
+  }
+
+  relabel {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "compose_service"
+  }
+
+  // --- Alternative to build __address__ from the container's private port ---
+  // relabel {
+  //   source_labels = ["__meta_docker_container_network_ip", "__meta_docker_port_private_port"]
+  //   target_label  = "__address__"
+  //   separator     = ":"
+  //   replacement   = "$1:$2"
+  // }
+}
+
+// ============================================
+// OUTPUT DESTINATIONS
+// ============================================
+
+loki.write "loki_instance" {
+  endpoint {
+    url = "https://loki.networkingtitan.com/loki/api/v1/push"
+  }
+
+  // External labels applied to all log streams
+  external_labels = {
+    alloy_instance = "central-alloy",
+    datacenter     = "homelab",
+  }
+}
+
+prometheus.remote_write "prometheus_instance" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+
+  external_labels = {
+    alloy_instance = "central-alloy",
+    datacenter     = "homelab",
+  }
+}

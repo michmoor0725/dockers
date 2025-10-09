@@ -1,0 +1,18 @@
+services:
+    speedtest:
+        restart: unless-stopped
+        container_name: openspeedtest
+        ports:
+            - '3002:3000'
+            - '3003:3001'
+        image: openspeedtest/latest
+
+        logging:
+         driver: loki
+         options:
+            loki-url: "https://loki.networkingtitan.com/loki/api/v1/push"
+            loki-retries: 2
+            loki-max-backoff: 800ms
+            loki-timeout: 1s
+            keep-file: "true"
+            mode: "non-blocking"

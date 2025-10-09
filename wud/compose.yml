@@ -1,0 +1,60 @@
+services:
+  wud:
+    image: getwud/wud:latest
+    container_name: wud
+    restart: unless-stopped
+    ports:
+      - "3004:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./wud-data:/store
+    environment:
+      # Logging
+      - WUD_LOG_LEVEL=debug
+      - TZ=America/New_York
+
+      # Local Docker Watcher
+      - WUD_WATCHER_LOCAL_CRON=30 6 * * *
+      - WUD_WATCHER_LOCAL_WATCHALL=true
+
+
+      # Remote Docker Watcher (790CCV server)
+      - WUD_WATCHER_790CCV_HOST=192.168.70.26
+      - WUD_WATCHER_790CCV_PORT=2375
+      - WUD_WATCHER_790CCV_CRON=30 6 * * *
+      - WUD_WATCHER_790CCV_WATCHALL=true
+
+      # Docker Hub Registry
+      - WUD_REGISTRY_HUB_PUBLIC_LOGIN=speedyangel
+      - WUD_REGISTRY_HUB_PUBLIC_TOKEN=${ACCESS_TOKEN}
+
+      # SMTP Email Notifications
+      - WUD_TRIGGER_SMTP_ALERT_HOST=smtp.zoho.com
+      - WUD_TRIGGER_SMTP_ALERT_PORT=587
+      - WUD_TRIGGER_SMTP_ALERT_USER=admin@networkingtitan.com
+      - WUD_TRIGGER_SMTP_ALERT_PASS=${SMTP_PASSWORD}
+      - WUD_TRIGGER_SMTP_ALERT_FROM=wud@networkingtitan.com
+      - WUD_TRIGGER_SMTP_ALERT_TO=admin@networkingtitan.com
+      - WUD_TRIGGER_SMTP_ALERT_SIMPLETITLE=WUD Alert - New $${container.updateKind.kind} found for $${container.name}
+      - WUD_TRIGGER_SMTP_ALERT_SIMPLEBODY=Container $${name} can be updated from $${local.substring(0, 15)} to $${remote.substring(0, 15)}
+      - WUD_TRIGGER_SMTP_ALERT_ONCE=false
+      - WUD_TRIGGER_SMTP_ALERT_THRESHOLD=all
+
+      # Docker Trigger for AUTO-UPDATES (Local only)
+      - WUD_TRIGGER_DOCKER_LOCALUPDATE_AUTO=true
+      - WUD_TRIGGER_DOCKER_LOCALUPDATE_ONCE=false
+      - WUD_TRIGGER_DOCKER_LOCALUPDATE_THRESHOLD=all
+
+      # Prometheus metrics
+      - WUD_API_PROMETHEUS_ENABLED=true
+      - WUD_API_PROMETHEUS_PATH=/metrics
+
+    healthcheck:
+      test: curl --fail http://localhost:3000/health || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
