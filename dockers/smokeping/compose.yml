@@ -12,3 +12,5 @@ services:
             - PGID=1000
             - PUID=1000
         container_name: smokeping
+
+        
