@@ -1,0 +1,3 @@
+# There is a hidden files called .gitignore
+# It is written so that git only tracks yaml or yml files which means only my docker compose stack. 
+# Bind mounts and the data are not tracked
