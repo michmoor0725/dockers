@@ -1,9 +1,0 @@
-services:
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower-remote
-    restart: unless-stopped
-    ports:
-      - "8898:8080" #Exposing the API
-    env_file:
-      - ./watchtower.env
