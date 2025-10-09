@@ -1,0 +1,7 @@
+# git add <file> → stage the change.
+
+# git commit -m "msg" → create a commit in your local branch.
+
+# git push → send your commits to the remote.
+
+# git status

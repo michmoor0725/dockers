@@ -1,0 +1,43 @@
+freshrss/freshrss_data/users/
+
+
+# Docker runtime data and user-generated content
+**/data/
+**/logs/
+**/db/
+**/config/
+**/letsencrypt/
+**/temp/
+**/cache/
+**/tokens/
+
+# FreshRSS specific
+freshrss/freshrss_data/users/
+freshrss/freshrss_data/extensions-data/
+freshrss/freshrss_data/favicons/
+freshrss/freshrss_data/fever/
+freshrss/freshrss_data/cache/
+freshrss/freshrss_data/PubSubHubbub/
+freshrss/freshrss_data/Retry-After/
+freshrss/freshrss_data/tokens/
+
+# NetAlertX
+netalertx/config/
+netalertx/db/
+netalertx/logs/
+
+# Prometheus/Grafana
+prometheus/grafana/data/
+
+# Nginx Proxy Manager
+npm/letsencrypt/
+
+# Semaphore
+semaphore_ui/temp/
+
+# General patterns
+*.log
+*.db
+*.sqlite
+.env
+.env.*
