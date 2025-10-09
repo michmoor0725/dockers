@@ -1,0 +1,14 @@
+services:
+    smokeping:
+        image: linuxserver/smokeping
+        restart: unless-stopped
+        volumes:
+            - './data:/data'
+            - './config:/config'
+        ports:
+            - '8865:80'
+        environment:
+            - TZ=America/New_York
+            - PGID=1000
+            - PUID=1000
+        container_name: smokeping
